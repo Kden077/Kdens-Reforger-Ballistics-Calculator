@@ -1,0 +1,1568 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kdens-Reforger-Ballistics-Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #facc15;
+      --danger: #f87171;
+      --good: #34d399;
+      --border: #374151;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #1e3a5f 0%, var(--bg) 42%, #020617 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: 0.2px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: rgba(17, 24, 39, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+    }
+
+    .card + .card {
+      margin-top: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, button {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #030712;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .full { margin-bottom: 14px; }
+
+    button {
+      background: linear-gradient(180deg, #facc15, #ca8a04);
+      color: #111827;
+      font-weight: 700;
+      border: 0;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    button:hover { filter: brightness(1.05); }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .adjust-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      max-width: 260px;
+      margin: 12px auto 0;
+    }
+
+    .adjust-pad button {
+      margin: 0;
+      padding: 10px 8px;
+    }
+
+    .adjust-pad .blank {
+      visibility: hidden;
+    }
+
+    .adjust-status {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+
+    .small-btn {
+      background: #374151;
+      color: var(--text);
+      font-size: 13px;
+      padding: 9px 10px;
+    }
+
+    .danger-btn {
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 620px) {
+      .results { grid-template-columns: 1fr; }
+      .row, .button-row { grid-template-columns: 1fr; }
+    }
+
+    .metric {
+      background: rgba(31, 41, 55, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .metric .name {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .metric .value {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .metric .unit {
+      color: var(--muted);
+      font-size: 14px;
+      margin-left: 4px;
+    }
+
+    .main {
+      border-color: rgba(250, 204, 21, 0.5);
+      background: rgba(59, 45, 6, 0.48);
+    }
+
+    .main .value {
+      color: var(--accent);
+      font-size: 36px;
+    }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.5);
+      border: 1px solid rgba(248, 113, 113, 0.5);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.4;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 8px;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    code { color: #fde68a; }
+
+    .history-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .history-actions button {
+      width: auto;
+      margin: 0;
+      padding: 8px 10px;
+    }
+
+    .history-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .history-table {
+      margin: 0;
+      min-width: 1180px;
+    }
+
+    .history-table tr:hover td {
+      background: rgba(55, 65, 81, 0.45);
+    }
+
+    .history-table button {
+      width: auto;
+      padding: 6px 8px;
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .empty-history {
+      color: var(--muted);
+      padding: 14px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+
+    .file-input {
+      background: #030712;
+      border: 1px dashed var(--border);
+      cursor: pointer;
+    }
+
+    .backup-status {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    .mission-line {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .mission-line strong {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Kdens-Reforger-Ballistics-Calculator</h1>
+    <div class="sub">
+      M777 fire solution tool for Arma Reforger. Enter 8-digit grids plus gun/target elevation to calculate azimuth, range, corrected elevation, and time of flight.
+    </div>
+
+    <div class="grid">
+      <section>
+        <div class="card">
+          <div class="row">
+            <div>
+              <label for="missionFrom">Fire mission from</label>
+              <input id="missionFrom" value="Gun 1" placeholder="Example: Alpha Gun, Base Kodiak" />
+            </div>
+            <div>
+              <label for="missionTo">Fire mission to</label>
+              <input id="missionTo" value="Target 1" placeholder="Example: Enemy mortar, OBJ Raven" />
+            </div>
+          </div>
+
+          <div class="full">
+            <label for="missionName">Mission name</label>
+            <input id="missionName" value="FM-001" placeholder="Example: FM-001, OBJ Raven, Counter Battery" />
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="gunGrid">Gun grid, 8 digits</label>
+              <input id="gunGrid" value="12345678" maxlength="8" inputmode="numeric" />
+            </div>
+            <div>
+              <label for="targetGrid">Target grid, 8 digits</label>
+              <input id="targetGrid" value="12405920" maxlength="8" inputmode="numeric" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="gunAlt">Gun elevation, meters</label>
+              <input id="gunAlt" type="number" value="120" step="1" />
+            </div>
+            <div>
+              <label for="targetAlt">Target elevation, meters</label>
+              <input id="targetAlt" type="number" value="180" step="1" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="charge">Charge</label>
+              <select id="charge">
+                <option value="auto">Auto, lowest valid charge</option>
+                <option value="1">Charge 1</option>
+                <option value="2">Charge 2</option>
+                <option value="3" selected>Charge 3</option>
+                <option value="4">Charge 4</option>
+                <option value="5">Charge 5</option>
+              </select>
+            </div>
+            <div>
+              <label for="siteFactor">Elevation correction factor</label>
+              <input id="siteFactor" type="number" value="1.00" min="0" max="2" step="0.01" />
+            </div>
+          </div>
+
+          <div class="full">
+            <label for="gridScale">8-digit grid scale</label>
+            <select id="gridScale">
+              <option value="10" selected>Standard 8-digit grid: each digit step = 10 m</option>
+              <option value="1">Fine/grid debug mode: each digit step = 1 m</option>
+            </select>
+          </div>
+
+          <div class="card" style="padding: 14px; margin: 14px 0; background: rgba(31, 41, 55, 0.55); box-shadow: none;">
+            <h2 style="font-size: 17px; margin-bottom: 8px;">Absolute coordinate adjustment</h2>
+            <div class="note" style="margin-top: 0;">
+              Moves the <strong>target grid</strong> by 10 meters in absolute map coordinates and recalculates without saving.
+            </div>
+            <div class="adjust-pad">
+              <span class="blank"></span>
+              <button class="small-btn" onclick="adjustTargetGrid(0, 10)">N +10m</button>
+              <span class="blank"></span>
+              <button class="small-btn" onclick="adjustTargetGrid(-10, 0)">W +10m</button>
+              <button class="small-btn" onclick="resetTargetGrid()">Reset</button>
+              <button class="small-btn" onclick="adjustTargetGrid(10, 0)">E +10m</button>
+              <span class="blank"></span>
+              <button class="small-btn" onclick="adjustTargetGrid(0, -10)">S +10m</button>
+              <span class="blank"></span>
+            </div>
+            <div id="absoluteAdjustStatus" class="adjust-status">No absolute adjustment applied.</div>
+          </div>
+
+          <div class="card" style="padding: 14px; margin: 14px 0; background: rgba(31, 41, 55, 0.55); box-shadow: none;">
+            <h2 style="font-size: 17px; margin-bottom: 8px;">Line-of-fire adjustment</h2>
+            <div class="note" style="margin-top: 0;">
+              Moves the <strong>target grid</strong> relative to the current gun-to-target line. <strong>Add / Drop</strong> moves farther or closer. <strong>Left / Right</strong> moves perpendicular to the line of fire.
+            </div>
+            <div class="adjust-pad">
+              <span class="blank"></span>
+              <button class="small-btn" onclick="adjustTargetRelativeToFire(10, 0)">Add +10m</button>
+              <span class="blank"></span>
+              <button class="small-btn" onclick="adjustTargetRelativeToFire(0, -10)">Left +10m</button>
+              <button class="small-btn" onclick="resetTargetGrid()">Reset</button>
+              <button class="small-btn" onclick="adjustTargetRelativeToFire(0, 10)">Right +10m</button>
+              <span class="blank"></span>
+              <button class="small-btn" onclick="adjustTargetRelativeToFire(-10, 0)">Drop +10m</button>
+              <span class="blank"></span>
+            </div>
+            <div id="relativeAdjustStatus" class="adjust-status">No line-of-fire adjustment applied.</div>
+          </div>
+
+          <div class="card" style="padding: 14px; margin: 14px 0; background: rgba(31, 41, 55, 0.55); box-shadow: none;">
+            <h2 style="font-size: 17px; margin-bottom: 8px;">Manual mil trim</h2>
+            <div class="note" style="margin-top: 0;">
+              Fine-tune the final solution in <strong>1 mil</strong> increments. This changes the displayed and saved fire mission values.
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Azimuth trim</label>
+                <div class="button-row">
+                  <button class="small-btn" onclick="adjustManualMil('azimuth', -1)">Azimuth -1 mil</button>
+                  <button class="small-btn" onclick="adjustManualMil('azimuth', 1)">Azimuth +1 mil</button>
+                </div>
+              </div>
+              <div>
+                <label>Elevation trim</label>
+                <div class="button-row">
+                  <button class="small-btn" onclick="adjustManualMil('elevation', -1)">Elevation -1 mil</button>
+                  <button class="small-btn" onclick="adjustManualMil('elevation', 1)">Elevation +1 mil</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button class="small-btn" onclick="resetManualMilTrim()">Reset mil trim</button>
+              <button class="small-btn" onclick="saveAdjustedMissionToHistory()">Save trimmed mission to history</button>
+            </div>
+
+            <div id="manualTrimStatus" class="adjust-status">No manual mil trim applied.</div>
+          </div>
+
+          <button onclick="runCalc(true)">Calculate and save to history</button>
+          <div class="button-row">
+            <button class="small-btn" onclick="runCalc(false)">Calculate only</button>
+            <button class="small-btn" onclick="loadExample()">Load example</button>
+          </div>
+          <div class="button-row">
+            <button class="small-btn" onclick="saveAdjustedMissionToHistory()">Save current adjusted mission to history</button>
+            <button class="small-btn" onclick="resetTargetGrid()">Reset adjustments</button>
+          </div>
+
+          <div id="error" class="error"></div>
+
+          <div class="note">
+            Height correction uses high-angle table logic:
+            <code>final elevation = table elevation - atan((target elev - gun elev) / range)</code>, converted to mils.
+            If the game mod behaves differently, tune the correction factor.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Backup / Load / Save Missions</h2>
+
+          <div class="button-row">
+            <button class="small-btn" onclick="saveMissionsBackup()">Save missions backup</button>
+            <button class="small-btn" onclick="saveCurrentMissionOnly()">Save current mission only</button>
+          </div>
+
+          <div class="full" style="margin-top: 14px;">
+            <label for="loadMode">Load mode</label>
+            <select id="loadMode">
+              <option value="merge" selected>Merge loaded missions with current history</option>
+              <option value="replace">Replace current history with loaded missions</option>
+            </select>
+          </div>
+
+          <div class="full">
+            <label for="backupFile">Load missions backup JSON</label>
+            <input id="backupFile" class="file-input" type="file" accept=".json,application/json" onchange="loadMissionsBackupFile(event)" />
+          </div>
+
+          <div class="button-row">
+            <button class="small-btn" onclick="copyHistoryCsv()">Copy history CSV</button>
+            <button class="small-btn" onclick="downloadHistoryCsv()">Download history CSV</button>
+          </div>
+
+          <div class="button-row">
+            <button class="small-btn" onclick="exportHistoryJson()">Download raw JSON</button>
+            <button class="small-btn danger-btn" onclick="clearHistory()">Clear history</button>
+          </div>
+
+          <div id="backupStatus" class="backup-status">History is saved in this browser using localStorage. Use backup files to move missions between browsers/devices.</div>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <div class="mission-line">
+            Mission: <strong id="missionOut">—</strong>
+          </div>
+
+          <div class="results">
+            <div class="metric main">
+              <div class="name">Final elevation</div>
+              <div class="value"><span id="finalElev">—</span><span class="unit">mil</span></div>
+            </div>
+            <div class="metric main">
+              <div class="name">Azimuth</div>
+              <div class="value"><span id="azimuth">—</span><span class="unit">mil</span></div>
+            </div>
+
+            <div class="metric">
+              <div class="name">Range</div>
+              <div class="value"><span id="range">—</span><span class="unit">m</span></div>
+            </div>
+            <div class="metric">
+              <div class="name">Charge</div>
+              <div class="value"><span id="chargeOut">—</span></div>
+            </div>
+
+            <div class="metric">
+              <div class="name">Base table elevation</div>
+              <div class="value"><span id="baseElev">—</span><span class="unit">mil</span></div>
+            </div>
+            <div class="metric">
+              <div class="name">Site correction</div>
+              <div class="value"><span id="siteMils">—</span><span class="unit">mil</span></div>
+            </div>
+
+            <div class="metric">
+              <div class="name">Height difference</div>
+              <div class="value"><span id="heightDiff">—</span><span class="unit">m</span></div>
+            </div>
+            <div class="metric">
+              <div class="name">Time of flight</div>
+              <div class="value"><span id="tof">—</span><span class="unit">sec</span></div>
+            </div>
+          </div>
+
+          <table>
+            <tbody>
+              <tr>
+                <th>Interpolation bracket</th>
+                <td id="bracket">—</td>
+              </tr>
+              <tr>
+                <th>Base azimuth</th>
+                <td id="rawAz">—</td>
+              </tr>
+              <tr>
+                <th>Manual azimuth trim</th>
+                <td id="azTrimOut">—</td>
+              </tr>
+              <tr>
+                <th>Manual elevation trim</th>
+                <td id="elTrimOut">—</td>
+              </tr>
+              <tr>
+                <th>Gun XY</th>
+                <td id="gunXY">—</td>
+              </tr>
+              <tr>
+                <th>Target XY</th>
+                <td id="targetXY">—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Kdens-Reforger-Ballistics-Calculator is for Arma Reforger gameplay only. It is not suitable for real-world weapons, ballistics, or targeting use.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="history-header">
+            <h2>Calculation history</h2>
+            <div class="history-actions">
+              <button class="small-btn" onclick="renderHistory()">Refresh</button>
+            </div>
+          </div>
+          <div id="historyContainer"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const MILS_PER_RAD = 3200 / Math.PI;
+    const HISTORY_KEY = "KdensReforgerBallisticsCalculatorHistoryV1";
+
+    const BALLISTIC_TABLES = {
+      1: [
+        [950, 1245, 24.4],
+        [1000, 1221, 24.2],
+        [1050, 1197, 24.0],
+        [1100, 1171, 23.7],
+        [1150, 1144, 23.4],
+        [1200, 1115, 23.1],
+        [1250, 1084, 22.7],
+        [1300, 1050, 22.3],
+        [1350, 1011, 21.8],
+        [1400, 965, 21.2],
+        [1450, 907, 20.3],
+        [1500, 800, 18.6],
+      ],
+      2: [
+        [1500, 1270, 33.1],
+        [1550, 1257, 33.0],
+        [1600, 1243, 32.9],
+        [1650, 1229, 32.7],
+        [1700, 1214, 32.5],
+        [1750, 1200, 32.4],
+        [1800, 1185, 32.1],
+        [1850, 1169, 31.9],
+        [1900, 1153, 31.7],
+        [1950, 1136, 31.5],
+        [2000, 1119, 31.2],
+        [2050, 1101, 31.0],
+        [2100, 1082, 30.7],
+        [2150, 1062, 30.3],
+        [2200, 1041, 30.0],
+        [2250, 1018, 29.6],
+        [2300, 995, 29.2],
+        [2350, 967, 28.7],
+        [2400, 938, 28.1],
+        [2450, 904, 27.5],
+        [2500, 860, 26.5],
+      ],
+      3: [
+        [2100, 1272, 41.0],
+        [2200, 1253, 40.8],
+        [2300, 1233, 40.5],
+        [2400, 1213, 40.2],
+        [2500, 1192, 39.9],
+        [2600, 1170, 39.5],
+        [2700, 1147, 39.1],
+        [2800, 1123, 38.7],
+        [2900, 1098, 38.3],
+        [3000, 1070, 37.7],
+        [3100, 1042, 37.2],
+        [3200, 1010, 36.5],
+        [3300, 975, 35.7],
+        [3400, 936, 34.9],
+        [3500, 890, 33.7],
+        [3600, 828, 32.1],
+      ],
+      4: [
+        [2600, 1271, 47.2],
+        [2700, 1255, 47.0],
+        [2800, 1240, 46.7],
+        [2900, 1224, 46.5],
+        [3000, 1207, 46.2],
+        [3100, 1190, 45.9],
+        [3200, 1172, 45.6],
+        [3300, 1154, 45.2],
+        [3400, 1135, 44.9],
+        [3500, 1116, 44.5],
+        [3600, 1095, 44.0],
+        [3700, 1074, 43.6],
+        [3800, 1052, 43.1],
+        [3900, 1028, 42.5],
+        [4000, 1003, 41.9],
+        [4100, 976, 41.3],
+        [4200, 946, 40.5],
+        [4300, 912, 39.6],
+        [4400, 874, 38.5],
+        [4500, 828, 37.2],
+      ],
+      5: [
+        [3000, 1271, 52.2],
+        [3100, 1258, 52.0],
+        [3200, 1244, 51.8],
+        [3300, 1230, 51.5],
+        [3400, 1216, 51.3],
+        [3500, 1202, 51.0],
+        [3600, 1187, 50.7],
+        [3700, 1172, 50.4],
+        [3800, 1156, 50.1],
+        [3900, 1140, 49.8],
+        [4000, 1124, 49.4],
+        [4100, 1107, 49.0],
+        [4200, 1089, 48.6],
+        [4300, 1071, 48.2],
+        [4400, 1052, 47.7],
+        [4500, 1032, 47.2],
+        [4600, 1011, 46.7],
+        [4700, 989, 46.1],
+        [4800, 966, 45.5],
+        [4900, 941, 44.7],
+        [5000, 913, 44.0],
+        [5100, 883, 43.1],
+        [5200, 850, 42.0],
+        [5300, 809, 40.7],
+      ],
+    };
+
+    function parseEightDigitGrid(grid, scale) {
+      const clean = String(grid).replace(/\D/g, "");
+      if (clean.length !== 8) {
+        throw new Error("Grid must be exactly 8 digits. Example: 12345678");
+      }
+      return {
+        raw: clean,
+        x: Number(clean.slice(0, 4)) * scale,
+        y: Number(clean.slice(4, 8)) * scale,
+      };
+    }
+
+    function normalizeMils(mils) {
+      return ((mils % 6400) + 6400) % 6400;
+    }
+
+    function calculateAzimuthMils(gunGrid, targetGrid) {
+      const dx = targetGrid.x - gunGrid.x;
+      const dy = targetGrid.y - gunGrid.y;
+      const radians = Math.atan2(dx, dy);
+      return normalizeMils(radians * MILS_PER_RAD);
+    }
+
+    function calculateRangeMeters(gunGrid, targetGrid) {
+      const dx = targetGrid.x - gunGrid.x;
+      const dy = targetGrid.y - gunGrid.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function autoSelectCharge(rangeMeters) {
+      for (const charge of [1, 2, 3, 4, 5]) {
+        const table = BALLISTIC_TABLES[charge];
+        const minRange = table[0][0];
+        const maxRange = table[table.length - 1][0];
+        if (rangeMeters >= minRange && rangeMeters <= maxRange) {
+          return charge;
+        }
+      }
+      throw new Error(`No charge table supports ${rangeMeters.toFixed(1)} m.`);
+    }
+
+    function interpolateTable(charge, rangeMeters) {
+      const table = BALLISTIC_TABLES[charge];
+      if (!table) {
+        throw new Error(`Invalid charge: ${charge}`);
+      }
+
+      const minRange = table[0][0];
+      const maxRange = table[table.length - 1][0];
+
+      if (rangeMeters < minRange || rangeMeters > maxRange) {
+        throw new Error(
+          `Range ${rangeMeters.toFixed(1)} m is outside Charge ${charge} limits: ${minRange}-${maxRange} m.`
+        );
+      }
+
+      for (let i = 0; i < table.length - 1; i++) {
+        const [r1, elev1, tof1] = table[i];
+        const [r2, elev2, tof2] = table[i + 1];
+
+        if (rangeMeters >= r1 && rangeMeters <= r2) {
+          const ratio = (rangeMeters - r1) / (r2 - r1);
+          return {
+            baseElevationMils: elev1 + ratio * (elev2 - elev1),
+            timeOfFlightSeconds: tof1 + ratio * (tof2 - tof1),
+            lowerBracket: r1,
+            upperBracket: r2,
+          };
+        }
+      }
+
+      const [r, elev, tof] = table[table.length - 1];
+      return {
+        baseElevationMils: elev,
+        timeOfFlightSeconds: tof,
+        lowerBracket: r,
+        upperBracket: r,
+      };
+    }
+
+    function getInputs() {
+      return {
+        missionName: document.getElementById("missionName").value.trim() || "Unnamed Mission",
+        missionFrom: document.getElementById("missionFrom").value.trim() || "Unknown From",
+        missionTo: document.getElementById("missionTo").value.trim() || "Unknown To",
+        gunGrid8: document.getElementById("gunGrid").value,
+        targetGrid8: document.getElementById("targetGrid").value,
+        gunAltitudeMeters: Number(document.getElementById("gunAlt").value),
+        targetAltitudeMeters: Number(document.getElementById("targetAlt").value),
+        charge: document.getElementById("charge").value,
+        siteCorrectionFactor: Number(document.getElementById("siteFactor").value),
+        gridScale: Number(document.getElementById("gridScale").value),
+      };
+    }
+
+    function calculateFireSolution(input) {
+      if (!Number.isFinite(input.gunAltitudeMeters) || !Number.isFinite(input.targetAltitudeMeters)) {
+        throw new Error("Gun elevation and target elevation must be valid numbers.");
+      }
+
+      if (!Number.isFinite(input.siteCorrectionFactor)) {
+        throw new Error("Elevation correction factor must be a valid number.");
+      }
+
+      const gunGrid = parseEightDigitGrid(input.gunGrid8, input.gridScale);
+      const targetGrid = parseEightDigitGrid(input.targetGrid8, input.gridScale);
+      const horizontalRangeMeters = calculateRangeMeters(gunGrid, targetGrid);
+
+      if (horizontalRangeMeters <= 0) {
+        throw new Error("Gun and target grids cannot be identical.");
+      }
+
+      const selectedCharge = input.charge === "auto" ? autoSelectCharge(horizontalRangeMeters) : Number(input.charge);
+      const tableSolution = interpolateTable(selectedCharge, horizontalRangeMeters);
+      const azimuthMils = calculateAzimuthMils(gunGrid, targetGrid);
+      const heightDifferenceMeters = input.targetAltitudeMeters - input.gunAltitudeMeters;
+      const siteAngleMils = Math.atan(heightDifferenceMeters / horizontalRangeMeters) * MILS_PER_RAD;
+      const computedCorrectedElevationMils = tableSolution.baseElevationMils - siteAngleMils * input.siteCorrectionFactor;
+      const finalAzimuthMils = normalizeMils(azimuthMils + manualAzimuthTrimMils);
+      const finalCorrectedElevationMils = computedCorrectedElevationMils + manualElevationTrimMils;
+
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        timestamp: new Date().toISOString(),
+        missionName: input.missionName,
+        missionFrom: input.missionFrom,
+        missionTo: input.missionTo,
+        requestedCharge: input.charge,
+        selectedCharge,
+        gunGridRaw: gunGrid.raw,
+        targetGridRaw: targetGrid.raw,
+        gunAltitudeMeters: input.gunAltitudeMeters,
+        targetAltitudeMeters: input.targetAltitudeMeters,
+        gridScale: input.gridScale,
+        siteCorrectionFactor: input.siteCorrectionFactor,
+        gunGrid,
+        targetGrid,
+        horizontalRangeMeters,
+        heightDifferenceMeters,
+        baseAzimuthMils: azimuthMils,
+        azimuthTrimMils: manualAzimuthTrimMils,
+        azimuthMils: finalAzimuthMils,
+        baseElevationMils: tableSolution.baseElevationMils,
+        siteAngleMils,
+        untrimmedCorrectedElevationMils: computedCorrectedElevationMils,
+        elevationTrimMils: manualElevationTrimMils,
+        correctedElevationMils: finalCorrectedElevationMils,
+        timeOfFlightSeconds: tableSolution.timeOfFlightSeconds,
+        lowerBracket: tableSolution.lowerBracket,
+        upperBracket: tableSolution.upperBracket,
+      };
+    }
+
+    function fmt(n, digits = 1) {
+      return Number(n).toFixed(digits);
+    }
+
+    function setText(id, text) {
+      document.getElementById(id).textContent = text;
+    }
+
+    function showError(message) {
+      const el = document.getElementById("error");
+      el.textContent = message;
+      el.style.display = "block";
+    }
+
+    function clearError() {
+      const el = document.getElementById("error");
+      el.textContent = "";
+      el.style.display = "none";
+    }
+
+    function renderSolution(solution) {
+      setText("missionOut", `${solution.missionName} | From: ${solution.missionFrom} | To: ${solution.missionTo}`);
+      setText("finalElev", fmt(solution.correctedElevationMils, 1));
+      setText("azimuth", fmt(solution.azimuthMils, 1));
+      setText("range", fmt(solution.horizontalRangeMeters, 1));
+      setText("chargeOut", `Charge ${solution.selectedCharge}`);
+      setText("baseElev", fmt(solution.baseElevationMils, 1));
+      setText("siteMils", fmt(solution.siteAngleMils, 1));
+      setText("heightDiff", `${solution.heightDifferenceMeters >= 0 ? "+" : ""}${fmt(solution.heightDifferenceMeters, 1)}`);
+      setText("tof", fmt(solution.timeOfFlightSeconds, 1));
+      setText("bracket", `${solution.lowerBracket}-${solution.upperBracket} m`);
+      setText("rawAz", `${fmt(solution.baseAzimuthMils ?? solution.azimuthMils, 3)} mil`);
+      setText("azTrimOut", `${(solution.azimuthTrimMils ?? 0) >= 0 ? "+" : ""}${fmt(solution.azimuthTrimMils ?? 0, 1)} mil`);
+      setText("elTrimOut", `${(solution.elevationTrimMils ?? 0) >= 0 ? "+" : ""}${fmt(solution.elevationTrimMils ?? 0, 1)} mil`);
+      setText("gunXY", `X ${fmt(solution.gunGrid.x, 0)}, Y ${fmt(solution.gunGrid.y, 0)}`);
+      setText("targetXY", `X ${fmt(solution.targetGrid.x, 0)}, Y ${fmt(solution.targetGrid.y, 0)}`);
+      updateManualTrimStatus();
+    }
+
+    function runCalc(saveToHistory) {
+      clearError();
+
+      try {
+        const solution = calculateFireSolution(getInputs());
+        renderSolution(solution);
+
+        if (saveToHistory) {
+          saveHistoryEntry(solution);
+          renderHistory();
+        }
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+    function saveAdjustedMissionToHistory() {
+      clearError();
+
+      try {
+        const solution = calculateFireSolution(getInputs());
+        renderSolution(solution);
+        saveHistoryEntry(solution);
+        renderHistory();
+
+        const status = document.getElementById("backupStatus");
+        if (status) {
+          status.textContent = `Saved adjusted mission to history: ${solution.missionName} | target grid ${solution.targetGridRaw}`;
+        }
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    let originalTargetGridForAdjustment = null;
+    let totalAdjustmentEastMeters = 0;
+    let totalAdjustmentNorthMeters = 0;
+    let totalAdjustmentForwardMeters = 0;
+    let totalAdjustmentRightMeters = 0;
+    let manualAzimuthTrimMils = 0;
+    let manualElevationTrimMils = 0;
+
+    function gridToMeters(gridText, scale) {
+      return parseEightDigitGrid(gridText, scale);
+    }
+
+    function metersToEightDigitGrid(xMeters, yMeters, scale) {
+      const easting = Math.round(xMeters / scale);
+      const northing = Math.round(yMeters / scale);
+
+      if (easting < 0 || easting > 9999 || northing < 0 || northing > 9999) {
+        throw new Error("Adjustment would move the target grid outside the 0000-9999 grid range.");
+      }
+
+      return String(easting).padStart(4, "0") + String(northing).padStart(4, "0");
+    }
+
+    function formatSignedMeters(value, positiveLabel, negativeLabel) {
+      if (Math.abs(value) < 0.05) return `${positiveLabel} 0.0`;
+      return value >= 0
+        ? `${positiveLabel} +${fmt(value, 1)}`
+        : `${negativeLabel} +${fmt(Math.abs(value), 1)}`;
+    }
+
+    function updateAdjustmentStatuses(currentGrid) {
+      const absoluteStatus = document.getElementById("absoluteAdjustStatus");
+      const relativeStatus = document.getElementById("relativeAdjustStatus");
+
+      if (absoluteStatus) {
+        const eastLabel = formatSignedMeters(totalAdjustmentEastMeters, "E", "W");
+        const northLabel = formatSignedMeters(totalAdjustmentNorthMeters, "N", "S");
+        absoluteStatus.textContent = `Current target grid ${currentGrid}. Total absolute adjustment from original target: ${eastLabel} m, ${northLabel} m.`;
+      }
+
+      if (relativeStatus) {
+        const forwardLabel = formatSignedMeters(totalAdjustmentForwardMeters, "Add", "Drop");
+        const rightLabel = formatSignedMeters(totalAdjustmentRightMeters, "Right", "Left");
+        relativeStatus.textContent = `Relative to line of fire: ${forwardLabel} m, ${rightLabel} m.`;
+      }
+    }
+
+    function ensureAdjustmentBaseline() {
+      const currentTargetGrid = document.getElementById("targetGrid").value.replace(/\D/g, "");
+      if (!originalTargetGridForAdjustment || currentTargetGrid.length !== 8) {
+        originalTargetGridForAdjustment = currentTargetGrid;
+        totalAdjustmentEastMeters = 0;
+        totalAdjustmentNorthMeters = 0;
+        totalAdjustmentForwardMeters = 0;
+        totalAdjustmentRightMeters = 0;
+      }
+    }
+
+    function adjustTargetGrid(deltaEastMeters, deltaNorthMeters) {
+      clearError();
+
+      try {
+        const scale = Number(document.getElementById("gridScale").value);
+        ensureAdjustmentBaseline();
+
+        const current = gridToMeters(document.getElementById("targetGrid").value, scale);
+        const newX = current.x + deltaEastMeters;
+        const newY = current.y + deltaNorthMeters;
+        const updatedGrid = metersToEightDigitGrid(newX, newY, scale);
+
+        document.getElementById("targetGrid").value = updatedGrid;
+
+        totalAdjustmentEastMeters += deltaEastMeters;
+        totalAdjustmentNorthMeters += deltaNorthMeters;
+
+        updateAdjustmentStatuses(updatedGrid);
+        runCalc(false);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    function adjustTargetRelativeToFire(deltaForwardMeters, deltaRightMeters) {
+      clearError();
+
+      try {
+        const scale = Number(document.getElementById("gridScale").value);
+        ensureAdjustmentBaseline();
+
+        const gun = gridToMeters(document.getElementById("gunGrid").value, scale);
+        const current = gridToMeters(document.getElementById("targetGrid").value, scale);
+
+        const dx = current.x - gun.x;
+        const dy = current.y - gun.y;
+        const range = Math.sqrt(dx * dx + dy * dy);
+
+        if (range <= 0) {
+          throw new Error("Gun and target grids cannot be identical for line-of-fire adjustment.");
+        }
+
+        const forwardX = dx / range;
+        const forwardY = dy / range;
+        const rightX = forwardY;
+        const rightY = -forwardX;
+
+        const deltaEast = forwardX * deltaForwardMeters + rightX * deltaRightMeters;
+        const deltaNorth = forwardY * deltaForwardMeters + rightY * deltaRightMeters;
+
+        const newX = current.x + deltaEast;
+        const newY = current.y + deltaNorth;
+        const updatedGrid = metersToEightDigitGrid(newX, newY, scale);
+
+        document.getElementById("targetGrid").value = updatedGrid;
+
+        totalAdjustmentEastMeters += deltaEast;
+        totalAdjustmentNorthMeters += deltaNorth;
+        totalAdjustmentForwardMeters += deltaForwardMeters;
+        totalAdjustmentRightMeters += deltaRightMeters;
+
+        updateAdjustmentStatuses(updatedGrid);
+        runCalc(false);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    function resetTargetGrid() {
+      if (!originalTargetGridForAdjustment) {
+        originalTargetGridForAdjustment = document.getElementById("targetGrid").value.replace(/\D/g, "");
+      }
+
+      if (originalTargetGridForAdjustment.length === 8) {
+        document.getElementById("targetGrid").value = originalTargetGridForAdjustment;
+      }
+
+      totalAdjustmentEastMeters = 0;
+      totalAdjustmentNorthMeters = 0;
+      totalAdjustmentForwardMeters = 0;
+      totalAdjustmentRightMeters = 0;
+
+      const absoluteStatus = document.getElementById("absoluteAdjustStatus");
+      const relativeStatus = document.getElementById("relativeAdjustStatus");
+
+      if (absoluteStatus) absoluteStatus.textContent = "Adjustment reset to original target grid.";
+      if (relativeStatus) relativeStatus.textContent = "Adjustment reset to original target grid.";
+
+      runCalc(false);
+    }
+
+    function resetAdjustmentBaseline() {
+      originalTargetGridForAdjustment = document.getElementById("targetGrid").value.replace(/\D/g, "");
+      totalAdjustmentEastMeters = 0;
+      totalAdjustmentNorthMeters = 0;
+      totalAdjustmentForwardMeters = 0;
+      totalAdjustmentRightMeters = 0;
+
+      const absoluteStatus = document.getElementById("absoluteAdjustStatus");
+      const relativeStatus = document.getElementById("relativeAdjustStatus");
+
+      if (absoluteStatus) absoluteStatus.textContent = "No absolute adjustment applied.";
+      if (relativeStatus) relativeStatus.textContent = "No line-of-fire adjustment applied.";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const targetInput = document.getElementById("targetGrid");
+      const gunInput = document.getElementById("gunGrid");
+      const scaleSelect = document.getElementById("gridScale");
+
+      if (targetInput) targetInput.addEventListener("change", resetAdjustmentBaseline);
+      if (gunInput) gunInput.addEventListener("change", resetAdjustmentBaseline);
+      if (scaleSelect) scaleSelect.addEventListener("change", resetAdjustmentBaseline);
+    });
+
+    function updateManualTrimStatus() {
+      const status = document.getElementById("manualTrimStatus");
+      if (!status) return;
+
+      const azLabel = manualAzimuthTrimMils === 0
+        ? "0"
+        : (manualAzimuthTrimMils > 0 ? `+${manualAzimuthTrimMils}` : `${manualAzimuthTrimMils}`);
+
+      const elLabel = manualElevationTrimMils === 0
+        ? "0"
+        : (manualElevationTrimMils > 0 ? `+${manualElevationTrimMils}` : `${manualElevationTrimMils}`);
+
+      status.textContent = `Manual trim active: Azimuth ${azLabel} mil, Elevation ${elLabel} mil.`;
+    }
+
+    function adjustManualMil(type, delta) {
+      clearError();
+
+      if (type === "azimuth") {
+        manualAzimuthTrimMils += delta;
+      } else if (type === "elevation") {
+        manualElevationTrimMils += delta;
+      }
+
+      updateManualTrimStatus();
+      runCalc(false);
+    }
+
+    function resetManualMilTrim() {
+      manualAzimuthTrimMils = 0;
+      manualElevationTrimMils = 0;
+      const status = document.getElementById("manualTrimStatus");
+      if (status) status.textContent = "No manual mil trim applied.";
+      runCalc(false);
+    }
+
+    function loadExample() {
+      document.getElementById("missionFrom").value = "Gun 1";
+      document.getElementById("missionTo").value = "Target 1";
+      document.getElementById("missionName").value = "FM-001";
+      document.getElementById("gunGrid").value = "12345678";
+      document.getElementById("targetGrid").value = "12405920";
+      document.getElementById("gunAlt").value = "120";
+      document.getElementById("targetAlt").value = "180";
+      document.getElementById("charge").value = "3";
+      document.getElementById("siteFactor").value = "1.00";
+      document.getElementById("gridScale").value = "10";
+      manualAzimuthTrimMils = 0;
+      manualElevationTrimMils = 0;
+      resetAdjustmentBaseline();
+      resetManualMilTrim();
+    }
+
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function setHistory(history) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function saveHistoryEntry(solution) {
+      const history = getHistory();
+      history.unshift(solution);
+      setHistory(history.slice(0, 200));
+    }
+
+    function deleteHistoryEntry(id) {
+      const history = getHistory().filter(entry => entry.id !== id);
+      setHistory(history);
+      renderHistory();
+    }
+
+    function loadHistoryEntry(id) {
+      const entry = getHistory().find(item => item.id === id);
+      if (!entry) return;
+
+      document.getElementById("missionName").value = entry.missionName;
+      document.getElementById("missionFrom").value = entry.missionFrom;
+      document.getElementById("missionTo").value = entry.missionTo;
+      document.getElementById("gunGrid").value = entry.gunGridRaw;
+      document.getElementById("targetGrid").value = entry.targetGridRaw;
+      document.getElementById("gunAlt").value = entry.gunAltitudeMeters;
+      document.getElementById("targetAlt").value = entry.targetAltitudeMeters;
+      document.getElementById("charge").value = entry.requestedCharge || String(entry.selectedCharge);
+      document.getElementById("siteFactor").value = entry.siteCorrectionFactor;
+      document.getElementById("gridScale").value = entry.gridScale || 10;
+      manualAzimuthTrimMils = Number(entry.azimuthTrimMils || 0);
+      manualElevationTrimMils = Number(entry.elevationTrimMils || 0);
+      resetAdjustmentBaseline();
+      renderSolution(entry);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function clearHistory() {
+      if (!confirm("Clear all saved fire mission calculation history?")) return;
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistory();
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
+    }
+
+    function historyToCsv(history) {
+      const columns = [
+        "timestamp",
+        "missionName",
+        "missionFrom",
+        "missionTo",
+        "gunGrid",
+        "targetGrid",
+        "gunElevationM",
+        "targetElevationM",
+        "heightDifferenceM",
+        "rangeM",
+        "azimuthMils",
+        "charge",
+        "baseElevationMils",
+        "siteCorrectionMils",
+        "finalElevationMils",
+        "timeOfFlightSec",
+        "siteCorrectionFactor",
+        "bracket"
+      ];
+
+      const rows = history.map(entry => [
+        entry.timestamp,
+        entry.missionName,
+        entry.missionFrom,
+        entry.missionTo,
+        entry.gunGridRaw,
+        entry.targetGridRaw,
+        entry.gunAltitudeMeters,
+        entry.targetAltitudeMeters,
+        fmt(entry.heightDifferenceMeters, 1),
+        fmt(entry.horizontalRangeMeters, 1),
+        fmt(entry.azimuthMils, 1),
+        entry.selectedCharge,
+        fmt(entry.baseElevationMils, 1),
+        fmt(entry.siteAngleMils, 1),
+        fmt(entry.correctedElevationMils, 1),
+        fmt(entry.timeOfFlightSeconds, 1),
+        entry.siteCorrectionFactor,
+        `${entry.lowerBracket}-${entry.upperBracket} m`
+      ]);
+
+      return [columns, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
+    }
+
+    async function copyHistoryCsv() {
+      const history = getHistory();
+      if (!history.length) {
+        alert("No history to copy.");
+        return;
+      }
+
+      const csv = historyToCsv(history);
+      try {
+        await navigator.clipboard.writeText(csv);
+        alert("History CSV copied to clipboard.");
+      } catch {
+        alert("Clipboard copy failed. Use Download history CSV instead.");
+      }
+    }
+
+    function downloadTextFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadHistoryCsv() {
+      const history = getHistory();
+      if (!history.length) {
+        alert("No history to download.");
+        return;
+      }
+      downloadTextFile("Kdens-Reforger-Ballistics-Calculator_fire_mission_history.csv", historyToCsv(history), "text/csv");
+    }
+
+    function exportHistoryJson() {
+      const history = getHistory();
+      if (!history.length) {
+        alert("No history to download.");
+        return;
+      }
+      downloadTextFile("Kdens-Reforger-Ballistics-Calculator_fire_mission_history.json", JSON.stringify(history, null, 2), "application/json");
+    }
+
+    function setBackupStatus(message) {
+      const el = document.getElementById("backupStatus");
+      if (el) el.textContent = message;
+    }
+
+    function getCurrentMissionSolution() {
+      return calculateFireSolution(getInputs());
+    }
+
+    function saveCurrentMissionOnly() {
+      clearError();
+
+      try {
+        const solution = getCurrentMissionSolution();
+        const backup = {
+          app: "Kdens-Reforger-Ballistics-Calculator",
+          version: 3,
+          exportedAt: new Date().toISOString(),
+          type: "singleMission",
+          missions: [solution],
+        };
+
+        const safeName = solution.missionName
+          .replace(/[^a-z0-9_-]+/gi, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(0, 40) || "mission";
+
+        downloadTextFile(`Kdens-Reforger-Ballistics-Calculator_${safeName}.json`, JSON.stringify(backup, null, 2), "application/json");
+        setBackupStatus(`Saved current mission backup: ${solution.missionName}`);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    function saveMissionsBackup() {
+      const history = getHistory();
+
+      if (!history.length) {
+        alert("No saved mission history to back up. Use Calculate and save to history first.");
+        return;
+      }
+
+      const backup = {
+        app: "Kdens-Reforger-Ballistics-Calculator",
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        type: "missionHistory",
+        missions: history,
+      };
+
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      downloadTextFile(`Kdens-Reforger-Ballistics-Calculator_mission_backup_${stamp}.json`, JSON.stringify(backup, null, 2), "application/json");
+      setBackupStatus(`Saved backup with ${history.length} mission(s).`);
+    }
+
+    function normalizeLoadedMissions(parsed) {
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && Array.isArray(parsed.missions)) return parsed.missions;
+      if (parsed && parsed.missionName && parsed.correctedElevationMils !== undefined) return [parsed];
+
+      throw new Error("Invalid backup file. Expected a missions backup JSON file from this calculator.");
+    }
+
+    function validateMissionEntry(entry) {
+      const required = [
+        "missionName",
+        "missionFrom",
+        "missionTo",
+        "gunGridRaw",
+        "targetGridRaw",
+        "gunAltitudeMeters",
+        "targetAltitudeMeters",
+        "horizontalRangeMeters",
+        "azimuthMils",
+        "selectedCharge",
+        "correctedElevationMils"
+      ];
+
+      for (const key of required) {
+        if (entry[key] === undefined || entry[key] === null) {
+          throw new Error(`Invalid mission entry in backup. Missing field: ${key}`);
+        }
+      }
+
+      return {
+        ...entry,
+        id: entry.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
+        timestamp: entry.timestamp || new Date().toISOString(),
+      };
+    }
+
+    function mergeMissionHistories(current, loaded) {
+      const byKey = new Map();
+
+      for (const entry of [...loaded, ...current]) {
+        const key = [
+          entry.timestamp,
+          entry.missionName,
+          entry.missionFrom,
+          entry.missionTo,
+          entry.gunGridRaw,
+          entry.targetGridRaw,
+          entry.correctedElevationMils
+        ].join("|");
+
+        if (!byKey.has(key)) {
+          byKey.set(key, entry);
+        }
+      }
+
+      return Array.from(byKey.values())
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 200);
+    }
+
+    function loadMissionsBackupFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const loaded = normalizeLoadedMissions(parsed).map(validateMissionEntry);
+
+          if (!loaded.length) {
+            throw new Error("Backup file contains no missions.");
+          }
+
+          const mode = document.getElementById("loadMode").value;
+          const current = getHistory();
+          const nextHistory = mode === "replace"
+            ? loaded.slice(0, 200)
+            : mergeMissionHistories(current, loaded);
+
+          setHistory(nextHistory);
+          renderHistory();
+
+          const newest = nextHistory[0];
+          if (newest) {
+            loadHistoryEntry(newest.id);
+          }
+
+          setBackupStatus(
+            mode === "replace"
+              ? `Loaded ${loaded.length} mission(s) and replaced current history.`
+              : `Loaded ${loaded.length} mission(s) and merged with current history. Total: ${nextHistory.length}.`
+          );
+        } catch (err) {
+          showError(err.message);
+          setBackupStatus("Load failed. Check that this is a valid calculator backup JSON file.");
+        } finally {
+          event.target.value = "";
+        }
+      };
+
+      reader.onerror = () => {
+        showError("Unable to read selected backup file.");
+        setBackupStatus("Load failed. Unable to read selected file.");
+        event.target.value = "";
+      };
+
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderHistory() {
+      const container = document.getElementById("historyContainer");
+      const history = getHistory();
+
+      if (!history.length) {
+        container.innerHTML = `<div class="empty-history">No saved fire missions yet. Use <strong>Calculate and save to history</strong> to add one.</div>`;
+        return;
+      }
+
+      const rows = history.map(entry => {
+        const localTime = new Date(entry.timestamp).toLocaleString();
+        return `
+          <tr>
+            <td>${escapeHtml(localTime)}</td>
+            <td><strong>${escapeHtml(entry.missionName)}</strong><br><span style="color: var(--muted);">From: ${escapeHtml(entry.missionFrom)} → To: ${escapeHtml(entry.missionTo)}</span></td>
+            <td>${escapeHtml(entry.gunGridRaw)}<br><span style="color: var(--muted);">${escapeHtml(entry.gunAltitudeMeters)} m</span></td>
+            <td>${escapeHtml(entry.targetGridRaw)}<br><span style="color: var(--muted);">${escapeHtml(entry.targetAltitudeMeters)} m</span></td>
+            <td>${fmt(entry.horizontalRangeMeters, 1)}</td>
+            <td>${fmt(entry.azimuthMils, 1)}</td>
+            <td>${entry.selectedCharge}</td>
+            <td>${fmt(entry.baseElevationMils, 1)}</td>
+            <td>${fmt(entry.siteAngleMils, 1)}</td>
+            <td><strong>${fmt(entry.correctedElevationMils, 1)}</strong></td>
+            <td>${fmt(entry.timeOfFlightSeconds, 1)}</td>
+            <td>
+              <button class="small-btn" onclick="loadHistoryEntry('${entry.id}')">Load</button>
+              <button class="small-btn danger-btn" onclick="deleteHistoryEntry('${entry.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      container.innerHTML = `
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Mission</th>
+                <th>Gun</th>
+                <th>Target</th>
+                <th>Range m</th>
+                <th>Az mil</th>
+                <th>Chg</th>
+                <th>Base elev</th>
+                <th>Site mil</th>
+                <th>Final elev</th>
+                <th>TOF</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    loadExample();
+    updateManualTrimStatus();
+    renderHistory();
+  </script>
+</body>
+</html>
