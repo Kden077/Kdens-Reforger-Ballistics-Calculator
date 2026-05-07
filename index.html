@@ -328,13 +328,71 @@
     .mission-line strong {
       color: var(--text);
     }
+
+    .startup-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.82);
+      padding: 20px;
+    }
+
+    .startup-modal .modal-card {
+      max-width: 520px;
+      width: 100%;
+      background: rgba(17, 24, 39, 0.98);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.55);
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 620px) {
+      .choice-grid { grid-template-columns: 1fr; }
+    }
+
+    .choice-grid button {
+      min-height: 74px;
+      text-align: left;
+      padding: 14px;
+    }
+
   </style>
 </head>
 <body>
+  <div id="startupModal" class="startup-modal">
+    <div class="modal-card">
+      <h2>Choose calculator mode</h2>
+      <div class="note" style="margin-top: 0;">
+        Select the weapon system for this fire mission. You can change this later from the Weapon system dropdown.
+      </div>
+      <div class="choice-grid">
+        <button onclick="selectStartupWeapon('howitzer')">
+          <strong>M777 Howitzer</strong><br>
+          <span>M107 HE charge tables</span>
+        </button>
+        <button onclick="selectStartupWeapon('mortar81')">
+          <strong>US 81mm Mortar</strong><br>
+          <span>M821 HE ring tables</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="wrap">
     <h1>Kdens-Reforger-Ballistics-Calculator</h1>
     <div class="sub">
-      M777 fire solution tool for Arma Reforger. Enter 8-digit grids plus gun/target elevation to calculate azimuth, range, corrected elevation, and time of flight.
+      Arma Reforger fire solution tool for M777 howitzer and US 81mm mortar. Enter 8-digit grids plus gun/target elevation to calculate azimuth, range, corrected elevation, and time of flight.
     </div>
 
     <div class="grid">
@@ -354,6 +412,44 @@
           <div class="full">
             <label for="missionName">Mission name</label>
             <input id="missionName" value="FM-001" placeholder="Example: FM-001, OBJ Raven, Counter Battery" />
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="weaponType">Weapon system</label>
+              <select id="weaponType" onchange="updateWeaponUi(); runCalc(false);">
+                <option value="howitzer" selected>M777 Howitzer</option>
+                <option value="mortar81">US 81mm Mortar</option>
+              </select>
+            </div>
+            <div>
+              <label for="munitionType">Munition / shell</label>
+              <select id="munitionType" onchange="updateWeaponUi(); runCalc(false);">
+                <option value="M107_HE">M107 HE</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" id="mortarControls" style="display: none;">
+            <div>
+              <label for="mortarShell">Mortar shell</label>
+              <select id="mortarShell" onchange="updateWeaponUi(); runCalc(false);">
+                <option value="M821_HE" selected>M821 HE</option>
+                <option value="M853A1_ILLUM">M853A1 Illumination</option>
+                <option value="M819_SMOKE">M819 Smoke</option>
+              </select>
+            </div>
+            <div>
+              <label for="mortarRing">Mortar rings</label>
+              <select id="mortarRing" onchange="runCalc(false);">
+                <option value="auto" selected>Auto, lowest valid ring</option>
+                <option value="0">0 Rings</option>
+                <option value="1">1 Ring</option>
+                <option value="2">2 Rings</option>
+                <option value="3">3 Rings</option>
+                <option value="4">4 Rings</option>
+              </select>
+            </div>
           </div>
 
           <div class="row">
@@ -380,8 +476,8 @@
 
           <div class="row">
             <div>
-              <label for="charge">Charge</label>
-              <select id="charge">
+              <label for="charge" id="chargeLabel">Charge</label>
+              <select id="charge" onchange="runCalc(false);">
                 <option value="auto">Auto, lowest valid charge</option>
                 <option value="1">Charge 1</option>
                 <option value="2">Charge 2</option>
@@ -622,7 +718,7 @@
     const MILS_PER_RAD = 3200 / Math.PI;
     const HISTORY_KEY = "KdensReforgerBallisticsCalculatorHistoryV1";
 
-    const BALLISTIC_TABLES = {
+    const HOWITZER_TABLES = {
       1: [
         [950, 1245, 24.4],
         [1000, 1221, 24.2],
@@ -728,6 +824,297 @@
       ],
     };
 
+
+    const MORTAR_TABLES = {
+      M821_HE: {
+        label: "M821 HE",
+        rings: {
+          0: [
+            [50, 1540, 13.2, 61],
+            [100, 1479, 13.2, 63],
+            [150, 1416, 13.0, 66],
+            [200, 1350, 12.8, 71],
+            [250, 1279, 12.6, 78],
+            [300, 1201, 12.3, 95],
+            [350, 1106, 11.7, 151],
+            [400, 955, 10.7, null],
+          ],
+          1: [
+            [100, 1547, 20.0, 28],
+            [200, 1492, 19.9, 27],
+            [300, 1437, 19.7, 29],
+            [400, 1378, 19.5, 31],
+            [500, 1317, 19.2, 33],
+            [600, 1249, 18.8, 35],
+            [700, 1179, 18.3, 42],
+            [800, 1085, 17.5, 57],
+            [900, 954, 16.1, 148],
+          ],
+          2: [
+            [200, 1538, 26.6, 15],
+            [300, 1507, 26.5, 16],
+            [400, 1475, 26.4, 16],
+            [500, 1443, 26.3, 16],
+            [600, 1410, 26.2, 16],
+            [700, 1376, 26.0, 17],
+            [800, 1341, 25.8, 18],
+            [900, 1305, 25.5, 20],
+            [1000, 1266, 25.2, 20],
+            [1100, 1225, 24.9, 22],
+            [1200, 1180, 24.4, 23],
+            [1300, 1132, 23.9, 27],
+            [1400, 1076, 23.2, 31],
+            [1500, 1009, 22.3, 43],
+            [1600, 912, 20.9, 109],
+          ],
+          3: [
+            [300, 1534, 31.7, 12],
+            [400, 1511, 31.6, 11],
+            [500, 1489, 31.6, 12],
+            [600, 1466, 31.5, 12],
+            [700, 1442, 31.4, 12],
+            [800, 1419, 31.3, 12],
+            [900, 1395, 31.1, 13],
+            [1000, 1370, 31.0, 13],
+            [1100, 1344, 30.8, 13],
+            [1200, 1318, 30.6, 13],
+            [1300, 1291, 30.3, 14],
+            [1400, 1263, 30.1, 15],
+            [1500, 1233, 29.7, 15],
+            [1600, 1202, 29.4, 16],
+            [1700, 1169, 29.0, 17],
+            [1800, 1133, 28.5, 19],
+            [1900, 1094, 28.0, 21],
+            [2000, 1051, 27.3, 26],
+            [2100, 999, 26.5, 31],
+            [2200, 931, 25.3, 46],
+            [2300, 801, 22.7, null],
+          ],
+          4: [
+            [400, 1531, 36.3, 9],
+            [500, 1514, 36.2, 9],
+            [600, 1496, 36.2, 9],
+            [700, 1478, 36.1, 9],
+            [800, 1460, 36.0, 9],
+            [900, 1442, 35.9, 9],
+            [1000, 1424, 35.8, 9],
+            [1100, 1405, 35.7, 10],
+            [1200, 1385, 35.6, 10],
+            [1300, 1366, 35.4, 9],
+            [1400, 1346, 35.3, 10],
+            [1500, 1326, 35.1, 10],
+            [1600, 1305, 34.9, 11],
+            [1700, 1283, 34.6, 11],
+            [1800, 1261, 34.4, 11],
+            [1900, 1238, 34.1, 11],
+            [2000, 1214, 33.8, 12],
+            [2100, 1188, 33.5, 13],
+            [2200, 1162, 33.1, 14],
+            [2300, 1134, 32.7, 15],
+            [2400, 1104, 32.2, 17],
+            [2500, 1070, 31.7, 20],
+            [2600, 1034, 31.0, 25],
+            [2700, 993, 30.3, null],
+            [2800, 943, 29.3, null],
+            [2900, 870, 27.7, null],
+          ],
+        },
+      },
+      M853A1_ILLUM: {
+        label: "M853A1 Illumination",
+        rings: {
+          1: [
+            [200, 1463, 18.1, 35],
+            [250, 1428, 18.0, 37],
+            [300, 1391, 17.9, 39],
+            [350, 1352, 17.7, 40],
+            [400, 1312, 17.5, 43],
+            [450, 1269, 17.3, 45],
+            [500, 1224, 17.0, 49],
+            [550, 1175, 16.7, 55],
+            [600, 1120, 16.3, 65],
+            [650, 1055, 15.7, 81],
+            [700, 974, 15.0, 151],
+            [750, 823, 13.3, null],
+          ],
+          2: [
+            [200, 1529, 26.2, 17],
+            [300, 1493, 26.1, 18],
+            [400, 1457, 26.0, 19],
+            [500, 1419, 25.8, 19],
+            [600, 1379, 25.6, 20],
+            [700, 1338, 25.4, 21],
+            [800, 1295, 25.1, 23],
+            [900, 1249, 24.7, 25],
+            [1000, 1199, 24.3, 27],
+            [1100, 1144, 23.7, 30],
+            [1200, 1081, 23.0, 35],
+            [1300, 1005, 22.0, 47],
+            [1400, 900, 20.5, 98],
+          ],
+          3: [
+            [300, 1521, 31.1, 14],
+            [400, 1494, 31.1, 14],
+            [500, 1466, 31.0, 14],
+            [600, 1438, 30.8, 14],
+            [700, 1409, 30.7, 14],
+            [800, 1380, 30.5, 16],
+            [900, 1349, 30.3, 16],
+            [1000, 1317, 30.1, 16],
+            [1100, 1284, 29.8, 18],
+            [1200, 1249, 29.4, 19],
+            [1300, 1212, 29.1, 20],
+            [1400, 1172, 28.6, 21],
+            [1500, 1128, 28.1, 22],
+            [1600, 1081, 27.4, 26],
+            [1700, 1027, 26.6, 30],
+            [1800, 962, 25.6, 39],
+            [1900, 875, 24.1, 67],
+          ],
+          4: [
+            [400, 1515, 35.7, 11],
+            [500, 1493, 35.7, 11],
+            [600, 1471, 35.6, 11],
+            [700, 1448, 35.5, 11],
+            [800, 1426, 35.4, 12],
+            [900, 1402, 35.2, 12],
+            [1000, 1378, 35.0, 12],
+            [1100, 1353, 34.8, 13],
+            [1200, 1328, 34.6, 13],
+            [1300, 1301, 34.4, 14],
+            [1400, 1274, 34.1, 14],
+            [1500, 1245, 33.8, 15],
+            [1600, 1215, 33.4, 17],
+            [1700, 1184, 33.0, 18],
+            [1800, 1151, 32.6, 19],
+            [1900, 1115, 32.1, 21],
+            [2000, 1076, 31.5, 23],
+            [2100, 1033, 30.8, 27],
+            [2200, 985, 29.9, 33],
+            [2300, 928, 28.8, 52],
+            [2400, 855, 27.4, null],
+          ],
+        },
+      },
+      M819_SMOKE: {
+        label: "M819 Smoke",
+        rings: {
+          1: [
+            [200, 1463, 17.7, 36],
+            [250, 1427, 17.6, 36],
+            [300, 1391, 17.5, 39],
+            [350, 1352, 17.3, 38],
+            [400, 1314, 17.2, 43],
+            [450, 1271, 16.9, 44],
+            [500, 1227, 16.7, 49],
+            [550, 1178, 16.4, 54],
+            [600, 1124, 16.0, 64],
+            [650, 1060, 15.4, 78],
+            [700, 982, 14.7, 160],
+            [750, 822, 13.0, null],
+          ],
+          2: [
+            [200, 1528, 24.8, 19],
+            [300, 1491, 24.7, 19],
+            [400, 1453, 24.6, 19],
+            [500, 1414, 24.4, 19],
+            [600, 1374, 24.2, 20],
+            [700, 1333, 24.0, 22],
+            [800, 1289, 23.7, 23],
+            [900, 1242, 23.3, 25],
+            [1000, 1191, 22.9, 28],
+            [1100, 1133, 22.3, 31],
+            [1200, 1067, 21.6, 39],
+            [1300, 980, 20.5, 58],
+            [1400, 818, 18.0, null],
+          ],
+          3: [
+            [300, 1522, 29.6, 14],
+            [400, 1495, 29.6, 14],
+            [500, 1468, 29.5, 14],
+            [600, 1440, 29.3, 14],
+            [700, 1412, 29.2, 14],
+            [800, 1383, 29.0, 14],
+            [900, 1354, 28.9, 16],
+            [1000, 1323, 28.6, 16],
+            [1100, 1291, 28.4, 17],
+            [1200, 1257, 28.1, 18],
+            [1300, 1221, 27.7, 18],
+            [1400, 1183, 27.3, 20],
+            [1500, 1142, 26.8, 23],
+            [1600, 1096, 26.2, 25],
+            [1700, 1044, 25.5, 30],
+            [1800, 980, 24.5, 38],
+            [1900, 892, 23.0, 84],
+          ],
+          4: [
+            [400, 1517, 33.6, 11],
+            [500, 1495, 33.5, 10],
+            [600, 1474, 33.5, 11],
+            [700, 1452, 33.4, 11],
+            [800, 1429, 33.2, 11],
+            [900, 1407, 33.1, 12],
+            [1000, 1383, 33.0, 11],
+            [1100, 1360, 32.8, 12],
+            [1200, 1335, 32.6, 12],
+            [1300, 1310, 32.4, 13],
+            [1400, 1284, 32.1, 14],
+            [1500, 1257, 31.9, 14],
+            [1600, 1228, 31.5, 15],
+            [1700, 1199, 31.2, 17],
+            [1800, 1166, 30.8, 16],
+            [1900, 1132, 30.3, 18],
+            [2000, 1096, 29.8, 21],
+            [2100, 1055, 29.1, 23],
+            [2200, 1008, 28.4, 28],
+            [2300, 952, 27.4, 36],
+            [2400, 871, 25.8, 67],
+          ],
+        },
+      },
+    };
+
+    function getActiveWeaponType() {
+      return document.getElementById("weaponType")?.value || "howitzer";
+    }
+
+    function getActiveMunitionKey() {
+      const weaponType = getActiveWeaponType();
+      if (weaponType === "mortar81") {
+        return document.getElementById("mortarShell")?.value || "M821_HE";
+      }
+      return "M107_HE";
+    }
+
+    function getActiveTableKey() {
+      const weaponType = getActiveWeaponType();
+      if (weaponType === "mortar81") {
+        const ringValue = document.getElementById("mortarRing")?.value || "auto";
+        return ringValue === "auto" ? "auto" : Number(ringValue);
+      }
+      const chargeValue = document.getElementById("charge")?.value || "auto";
+      return chargeValue === "auto" ? "auto" : Number(chargeValue);
+    }
+
+    function getTableCollection(weaponType, munitionKey) {
+      if (weaponType === "mortar81") {
+        return MORTAR_TABLES[munitionKey]?.rings || {};
+      }
+      return HOWITZER_TABLES;
+    }
+
+    function getWeaponLabel(weaponType) {
+      return weaponType === "mortar81" ? "US 81mm Mortar" : "M777 Howitzer";
+    }
+
+    function getTableLabel(weaponType, munitionKey, selectedTableKey) {
+      if (weaponType === "mortar81") {
+        const shellLabel = MORTAR_TABLES[munitionKey]?.label || munitionKey;
+        return `${shellLabel}, ${selectedTableKey} Ring${Number(selectedTableKey) === 1 ? "" : "s"}`;
+      }
+      return `M107 HE, Charge ${selectedTableKey}`;
+    }
+
     function parseEightDigitGrid(grid, scale) {
       const clean = String(grid).replace(/\D/g, "");
       if (clean.length !== 8) {
@@ -757,22 +1144,23 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
 
-    function autoSelectCharge(rangeMeters) {
-      for (const charge of [1, 2, 3, 4, 5]) {
-        const table = BALLISTIC_TABLES[charge];
+    function autoSelectTableKey(rangeMeters, tables) {
+      const keys = Object.keys(tables).map(Number).sort((a, b) => a - b);
+      for (const key of keys) {
+        const table = tables[key];
         const minRange = table[0][0];
         const maxRange = table[table.length - 1][0];
         if (rangeMeters >= minRange && rangeMeters <= maxRange) {
-          return charge;
+          return key;
         }
       }
-      throw new Error(`No charge table supports ${rangeMeters.toFixed(1)} m.`);
+      throw new Error(`No ring/charge table supports ${rangeMeters.toFixed(1)} m.`);
     }
 
-    function interpolateTable(charge, rangeMeters) {
-      const table = BALLISTIC_TABLES[charge];
-      if (!table) {
-        throw new Error(`Invalid charge: ${charge}`);
+    function interpolateTable(tableKey, rangeMeters, tables, labelPrefix) {
+      const table = tables[tableKey];
+      if (!table || !table.length) {
+        throw new Error(`No ballistic table loaded for ${labelPrefix}.`);
       }
 
       const minRange = table[0][0];
@@ -780,29 +1168,35 @@
 
       if (rangeMeters < minRange || rangeMeters > maxRange) {
         throw new Error(
-          `Range ${rangeMeters.toFixed(1)} m is outside Charge ${charge} limits: ${minRange}-${maxRange} m.`
+          `Range ${rangeMeters.toFixed(1)} m is outside ${labelPrefix} limits: ${minRange}-${maxRange} m.`
         );
       }
 
       for (let i = 0; i < table.length - 1; i++) {
-        const [r1, elev1, tof1] = table[i];
-        const [r2, elev2, tof2] = table[i + 1];
+        const [r1, elev1, tof1, delev1] = table[i];
+        const [r2, elev2, tof2, delev2] = table[i + 1];
 
         if (rangeMeters >= r1 && rangeMeters <= r2) {
           const ratio = (rangeMeters - r1) / (r2 - r1);
+          const interp = (a, b) => (a === null || a === undefined || b === null || b === undefined)
+            ? null
+            : a + ratio * (b - a);
+
           return {
             baseElevationMils: elev1 + ratio * (elev2 - elev1),
             timeOfFlightSeconds: tof1 + ratio * (tof2 - tof1),
+            dElevPer100m: interp(delev1, delev2),
             lowerBracket: r1,
             upperBracket: r2,
           };
         }
       }
 
-      const [r, elev, tof] = table[table.length - 1];
+      const [r, elev, tof, delev] = table[table.length - 1];
       return {
         baseElevationMils: elev,
         timeOfFlightSeconds: tof,
+        dElevPer100m: delev,
         lowerBracket: r,
         upperBracket: r,
       };
@@ -813,6 +1207,9 @@
         missionName: document.getElementById("missionName").value.trim() || "Unnamed Mission",
         missionFrom: document.getElementById("missionFrom").value.trim() || "Unknown From",
         missionTo: document.getElementById("missionTo").value.trim() || "Unknown To",
+        weaponType: getActiveWeaponType(),
+        munitionKey: getActiveMunitionKey(),
+        requestedTableKey: getActiveTableKey(),
         gunGrid8: document.getElementById("gunGrid").value,
         targetGrid8: document.getElementById("targetGrid").value,
         gunAltitudeMeters: Number(document.getElementById("gunAlt").value),
@@ -840,8 +1237,14 @@
         throw new Error("Gun and target grids cannot be identical.");
       }
 
-      const selectedCharge = input.charge === "auto" ? autoSelectCharge(horizontalRangeMeters) : Number(input.charge);
-      const tableSolution = interpolateTable(selectedCharge, horizontalRangeMeters);
+      const weaponType = input.weaponType || "howitzer";
+      const munitionKey = input.munitionKey || "M107_HE";
+      const tables = getTableCollection(weaponType, munitionKey);
+      const selectedTableKey = input.requestedTableKey === "auto"
+        ? autoSelectTableKey(horizontalRangeMeters, tables)
+        : Number(input.requestedTableKey);
+      const tableLabel = getTableLabel(weaponType, munitionKey, selectedTableKey);
+      const tableSolution = interpolateTable(selectedTableKey, horizontalRangeMeters, tables, tableLabel);
       const azimuthMils = calculateAzimuthMils(gunGrid, targetGrid);
       const heightDifferenceMeters = input.targetAltitudeMeters - input.gunAltitudeMeters;
       const siteAngleMils = Math.atan(heightDifferenceMeters / horizontalRangeMeters) * MILS_PER_RAD;
@@ -855,8 +1258,14 @@
         missionName: input.missionName,
         missionFrom: input.missionFrom,
         missionTo: input.missionTo,
+        weaponType,
+        weaponLabel: getWeaponLabel(weaponType),
+        munitionKey,
+        tableLabel,
         requestedCharge: input.charge,
-        selectedCharge,
+        requestedTableKey: input.requestedTableKey,
+        selectedCharge: selectedTableKey,
+        selectedTableKey,
         gunGridRaw: gunGrid.raw,
         targetGridRaw: targetGrid.raw,
         gunAltitudeMeters: input.gunAltitudeMeters,
@@ -876,6 +1285,7 @@
         elevationTrimMils: manualElevationTrimMils,
         correctedElevationMils: finalCorrectedElevationMils,
         timeOfFlightSeconds: tableSolution.timeOfFlightSeconds,
+        dElevPer100m: tableSolution.dElevPer100m,
         lowerBracket: tableSolution.lowerBracket,
         upperBracket: tableSolution.upperBracket,
       };
@@ -906,7 +1316,7 @@
       setText("finalElev", fmt(solution.correctedElevationMils, 1));
       setText("azimuth", fmt(solution.azimuthMils, 1));
       setText("range", fmt(solution.horizontalRangeMeters, 1));
-      setText("chargeOut", `Charge ${solution.selectedCharge}`);
+      setText("chargeOut", solution.tableLabel || `Charge ${solution.selectedCharge}`);
       setText("baseElev", fmt(solution.baseElevationMils, 1));
       setText("siteMils", fmt(solution.siteAngleMils, 1));
       setText("heightDiff", `${solution.heightDifferenceMeters >= 0 ? "+" : ""}${fmt(solution.heightDifferenceMeters, 1)}`);
@@ -1162,10 +1572,68 @@
       runCalc(false);
     }
 
+    function updateWeaponUi(resetTable = true) {
+      const weaponType = getActiveWeaponType();
+      const munitionSelect = document.getElementById("munitionType");
+      const mortarControls = document.getElementById("mortarControls");
+      const chargeSelect = document.getElementById("charge");
+      const chargeLabel = document.getElementById("chargeLabel");
+
+      if (weaponType === "mortar81") {
+        mortarControls.style.display = "";
+        chargeSelect.disabled = true;
+        chargeLabel.textContent = "Howitzer charge";
+        if (munitionSelect) {
+          munitionSelect.innerHTML = `
+            <option value="M821_HE" selected>M821 HE</option>
+            <option value="M853A1_ILLUM">M853A1 Illumination</option>
+            <option value="M819_SMOKE">M819 Smoke</option>
+          `;
+          munitionSelect.disabled = true;
+        }
+      } else {
+        mortarControls.style.display = "none";
+        chargeSelect.disabled = false;
+        chargeLabel.textContent = "Charge";
+        if (munitionSelect) {
+          munitionSelect.innerHTML = `<option value="M107_HE" selected>M107 HE</option>`;
+          munitionSelect.disabled = true;
+        }
+      }
+    }
+
+    function selectStartupWeapon(weaponType) {
+      document.getElementById("weaponType").value = weaponType;
+      updateWeaponUi();
+
+      const modal = document.getElementById("startupModal");
+      if (modal) modal.style.display = "none";
+
+      try {
+        localStorage.setItem("kdensBallisticsStartupPromptSeen", "true");
+      } catch {}
+
+      runCalc(false);
+    }
+
+    function showStartupPromptIfNeeded() {
+      let seen = false;
+      try {
+        seen = localStorage.getItem("kdensBallisticsStartupPromptSeen") === "true";
+      } catch {}
+
+      const modal = document.getElementById("startupModal");
+      if (modal && !seen) {
+        modal.style.display = "flex";
+      }
+    }
+
     function loadExample() {
       document.getElementById("missionFrom").value = "Gun 1";
       document.getElementById("missionTo").value = "Target 1";
       document.getElementById("missionName").value = "FM-001";
+      document.getElementById("weaponType").value = "howitzer";
+      updateWeaponUi(false);
       document.getElementById("gunGrid").value = "12345678";
       document.getElementById("targetGrid").value = "12405920";
       document.getElementById("gunAlt").value = "120";
@@ -1214,7 +1682,14 @@
       document.getElementById("targetGrid").value = entry.targetGridRaw;
       document.getElementById("gunAlt").value = entry.gunAltitudeMeters;
       document.getElementById("targetAlt").value = entry.targetAltitudeMeters;
-      document.getElementById("charge").value = entry.requestedCharge || String(entry.selectedCharge);
+      document.getElementById("weaponType").value = entry.weaponType || "howitzer";
+      updateWeaponUi(false);
+      if ((entry.weaponType || "howitzer") === "mortar81") {
+        document.getElementById("mortarShell").value = entry.munitionKey || "M821_HE";
+        document.getElementById("mortarRing").value = String(entry.selectedTableKey ?? entry.selectedCharge ?? 0);
+      } else {
+        document.getElementById("charge").value = entry.requestedCharge || String(entry.selectedCharge);
+      }
       document.getElementById("siteFactor").value = entry.siteCorrectionFactor;
       document.getElementById("gridScale").value = entry.gridScale || 10;
       manualAzimuthTrimMils = Number(entry.azimuthTrimMils || 0);
@@ -1244,6 +1719,8 @@
         "missionName",
         "missionFrom",
         "missionTo",
+        "weapon",
+        "munitionTable",
         "gunGrid",
         "targetGrid",
         "gunElevationM",
@@ -1265,6 +1742,8 @@
         entry.missionName,
         entry.missionFrom,
         entry.missionTo,
+        entry.weaponLabel || entry.weaponType || "M777 Howitzer",
+        entry.tableLabel || entry.selectedCharge,
         entry.gunGridRaw,
         entry.targetGridRaw,
         entry.gunAltitudeMeters,
@@ -1522,7 +2001,7 @@
             <td>${escapeHtml(entry.targetGridRaw)}<br><span style="color: var(--muted);">${escapeHtml(entry.targetAltitudeMeters)} m</span></td>
             <td>${fmt(entry.horizontalRangeMeters, 1)}</td>
             <td>${fmt(entry.azimuthMils, 1)}</td>
-            <td>${entry.selectedCharge}</td>
+            <td>${escapeHtml(entry.tableLabel || entry.selectedCharge)}</td>
             <td>${fmt(entry.baseElevationMils, 1)}</td>
             <td>${fmt(entry.siteAngleMils, 1)}</td>
             <td><strong>${fmt(entry.correctedElevationMils, 1)}</strong></td>
@@ -1561,8 +2040,10 @@
     }
 
     loadExample();
+    updateWeaponUi(false);
     updateManualTrimStatus();
     renderHistory();
+    showStartupPromptIfNeeded();
   </script>
 </body>
 </html>
