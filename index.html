@@ -283,7 +283,7 @@
 
     .history-table {
       margin: 0;
-      min-width: 1180px;
+      min-width: 980px;
     }
 
     .history-table tr:hover td {
@@ -319,6 +319,68 @@
       min-height: 18px;
     }
 
+    .preset-card {
+      background: rgba(31, 41, 55, 0.55);
+      box-shadow: none;
+      padding: 14px;
+      margin: 14px 0;
+    }
+
+    .preset-list {
+      display: grid;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      background: rgba(3, 7, 18, 0.35);
+    }
+
+    .preset-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid rgba(55, 65, 81, 0.8);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(17, 24, 39, 0.65);
+    }
+
+    .preset-name {
+      color: var(--text);
+      font-weight: 800;
+      font-size: 15px;
+      line-height: 1.15;
+    }
+
+    .preset-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    .preset-in-range {
+      color: var(--good);
+      font-weight: 700;
+    }
+
+    .preset-out-range {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .preset-status {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+
     .mission-line {
       color: var(--muted);
       font-size: 13px;
@@ -328,6 +390,74 @@
     .mission-line strong {
       color: var(--text);
     }
+
+    .history-locations {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+      gap: 12px;
+      min-width: 480px;
+    }
+
+    .history-location-card {
+      background: rgba(3, 7, 18, 0.55);
+      border: 1px solid rgba(55, 65, 81, 0.85);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .history-location-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+
+    .history-location-name {
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+
+    .history-location-grid {
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .history-location-alt {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .history-solution-stack {
+      display: grid;
+      gap: 4px;
+      min-width: 170px;
+    }
+
+    .history-solution-primary {
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .history-solution-secondary {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .history-solution-muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
 
     .startup-modal {
       position: fixed;
@@ -417,14 +547,14 @@
           <div class="row">
             <div>
               <label for="weaponType">Weapon system</label>
-              <select id="weaponType" onchange="updateWeaponUi(); runCalc(false);">
+              <select id="weaponType" onchange="updateWeaponUi(); runCalc(false); renderPresetTargets();">
                 <option value="howitzer" selected>M777 Howitzer</option>
                 <option value="mortar81">US 81mm Mortar</option>
               </select>
             </div>
             <div>
               <label for="munitionType">Munition / shell</label>
-              <select id="munitionType" onchange="updateWeaponUi(); runCalc(false);">
+              <select id="munitionType" onchange="updateWeaponUi(); runCalc(false); renderPresetTargets();">
                 <option value="M107_HE">M107 HE</option>
               </select>
             </div>
@@ -433,7 +563,7 @@
           <div class="row" id="mortarControls" style="display: none;">
             <div>
               <label for="mortarShell">Mortar shell</label>
-              <select id="mortarShell" onchange="updateWeaponUi(); runCalc(false);">
+              <select id="mortarShell" onchange="updateWeaponUi(); runCalc(false); renderPresetTargets();">
                 <option value="M821_HE" selected>M821 HE</option>
                 <option value="M853A1_ILLUM">M853A1 Illumination</option>
                 <option value="M819_SMOKE">M819 Smoke</option>
@@ -441,8 +571,8 @@
             </div>
             <div>
               <label for="mortarRing">Mortar rings</label>
-              <select id="mortarRing" onchange="runCalc(false);">
-                <option value="auto" selected>Auto, lowest valid ring</option>
+              <select id="mortarRing" onchange="runCalc(false); renderPresetTargets();">
+                <option value="auto" selected>Auto, highest trajectory</option>
                 <option value="0">0 Rings</option>
                 <option value="1">1 Ring</option>
                 <option value="2">2 Rings</option>
@@ -477,8 +607,8 @@
           <div class="row">
             <div>
               <label for="charge" id="chargeLabel">Charge</label>
-              <select id="charge" onchange="runCalc(false);">
-                <option value="auto">Auto, lowest valid charge</option>
+              <select id="charge" onchange="runCalc(false); renderPresetTargets();">
+                <option value="auto">Auto, highest trajectory</option>
                 <option value="1">Charge 1</option>
                 <option value="2">Charge 2</option>
                 <option value="3" selected>Charge 3</option>
@@ -498,6 +628,32 @@
               <option value="10" selected>Standard 8-digit grid: each digit step = 10 m</option>
               <option value="1">Fine/grid debug mode: each digit step = 1 m</option>
             </select>
+          </div>
+
+          <div class="card preset-card">
+            <h2 style="font-size: 17px; margin-bottom: 8px;">Preset firing points / objectives</h2>
+            <div class="note" style="margin-top: 0;">
+              Select a known point for the gun or target. After the gun position is set, the target list only shows preset points that are in range for the selected weapon/table.
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="gunPreset">Set Gun / From position</label>
+                <select id="gunPreset" onchange="applyPresetToGun()">
+                  <option value="">Manual gun grid</option>
+                </select>
+              </div>
+              <div>
+                <label for="targetFilterMode">Target preset list</label>
+                <select id="targetFilterMode" onchange="renderPresetTargets()">
+                  <option value="inRange" selected>Only show targets in range</option>
+                  <option value="all">Show all preset targets</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="presetTargetList" class="preset-list"></div>
+            <div id="presetStatus" class="preset-status">Select a gun position or enter a manual gun grid to filter target presets by range.</div>
           </div>
 
           <div class="card" style="padding: 14px; margin: 14px 0; background: rgba(31, 41, 55, 0.55); box-shadow: none;">
@@ -670,6 +826,10 @@
           <table>
             <tbody>
               <tr>
+                <th>Auto selection mode</th>
+                <td id="autoModeOut">Highest valid trajectory</td>
+              </tr>
+              <tr>
                 <th>Interpolation bracket</th>
                 <td id="bracket">—</td>
               </tr>
@@ -703,7 +863,7 @@
 
         <div class="card">
           <div class="history-header">
-            <h2>Calculation history</h2>
+            <h2>Fire Mission History</h2>
             <div class="history-actions">
               <button class="small-btn" onclick="renderHistory()">Refresh</button>
             </div>
@@ -1146,15 +1306,32 @@
 
     function autoSelectTableKey(rangeMeters, tables) {
       const keys = Object.keys(tables).map(Number).sort((a, b) => a - b);
+      const validSolutions = [];
+
       for (const key of keys) {
         const table = tables[key];
         const minRange = table[0][0];
         const maxRange = table[table.length - 1][0];
+
         if (rangeMeters >= minRange && rangeMeters <= maxRange) {
-          return key;
+          const solution = interpolateTable(key, rangeMeters, tables, `table ${key}`);
+          validSolutions.push({
+            key,
+            elevation: solution.baseElevationMils,
+          });
         }
       }
-      throw new Error(`No ring/charge table supports ${rangeMeters.toFixed(1)} m.`);
+
+      if (!validSolutions.length) {
+        throw new Error(`No ring/charge table supports ${rangeMeters.toFixed(1)} m.`);
+      }
+
+      validSolutions.sort((a, b) => {
+        if (b.elevation !== a.elevation) return b.elevation - a.elevation;
+        return b.key - a.key;
+      });
+
+      return validSolutions[0].key;
     }
 
     function interpolateTable(tableKey, rangeMeters, tables, labelPrefix) {
@@ -1321,6 +1498,9 @@
       setText("siteMils", fmt(solution.siteAngleMils, 1));
       setText("heightDiff", `${solution.heightDifferenceMeters >= 0 ? "+" : ""}${fmt(solution.heightDifferenceMeters, 1)}`);
       setText("tof", fmt(solution.timeOfFlightSeconds, 1));
+      if (document.getElementById("autoModeOut")) {
+        setText("autoModeOut", "Highest valid trajectory");
+      }
       setText("bracket", `${solution.lowerBracket}-${solution.upperBracket} m`);
       setText("rawAz", `${fmt(solution.baseAzimuthMils ?? solution.azimuthMils, 3)} mil`);
       setText("azTrimOut", `${(solution.azimuthTrimMils ?? 0) >= 0 ? "+" : ""}${fmt(solution.azimuthTrimMils ?? 0, 1)} mil`);
@@ -1341,6 +1521,8 @@
           saveHistoryEntry(solution);
           renderHistory();
         }
+
+        renderPresetTargets();
       } catch (err) {
         showError(err.message);
       }
@@ -1626,6 +1808,186 @@
       if (modal && !seen) {
         modal.style.display = "flex";
       }
+    }
+    const PRESET_POINTS = [
+      { name: "Buire", grid: "09890967", elevation: 175 },
+      { name: "South Epaux-Bezu", grid: "09740892", elevation: 145 },
+      { name: "Monthiers", grid: "08420908", elevation: 115 },
+      { name: "Etrepilly", grid: "08550769", elevation: 230 },
+      { name: "Hautevesnes", grid: "06210861", elevation: 95 },
+      { name: "Airfield", grid: "06150721", elevation: 175 },
+      { name: "Bussiares", grid: "04310823", elevation: 95 },
+      { name: "Belleau Wood", grid: "03070705", elevation: 115 },
+      { name: "Bouresches Station", grid: "03730714", elevation: 115 },
+      { name: "Fort De Vaux", grid: "04730679", elevation: 120 },
+      { name: "West Monneaux", grid: "05610543", elevation: 175 },
+      { name: "Outpost Bravo", grid: "03520591", elevation: 140 },
+      { name: "Triangle Farm", grid: "04450464", elevation: 190 },
+      { name: "Courpru", grid: "04690352", elevation: 180 },
+      { name: "Southeast Marigny", grid: "03570438", elevation: 175 },
+    ];
+
+    function setPresetStatus(message) {
+      const el = document.getElementById("presetStatus");
+      if (el) el.textContent = message;
+    }
+
+    function populateGunPresetDropdown() {
+      const select = document.getElementById("gunPreset");
+      if (!select || select.dataset.loaded === "true") return;
+
+      for (const point of PRESET_POINTS) {
+        const option = document.createElement("option");
+        option.value = point.name;
+        option.textContent = `${point.name} | ${point.grid} | ${point.elevation} m`;
+        select.appendChild(option);
+      }
+
+      select.dataset.loaded = "true";
+    }
+
+    function findPresetPoint(name) {
+      return PRESET_POINTS.find(point => point.name === name);
+    }
+
+    function applyPresetToGun() {
+      const selectedName = document.getElementById("gunPreset").value;
+      const point = findPresetPoint(selectedName);
+      if (!point) {
+        renderPresetTargets();
+        return;
+      }
+
+      document.getElementById("missionFrom").value = point.name;
+      document.getElementById("gunGrid").value = point.grid;
+      document.getElementById("gunAlt").value = point.elevation;
+
+      resetAdjustmentBaseline();
+      renderPresetTargets();
+      runCalc(false);
+
+      setPresetStatus(`Gun set to ${point.name}: ${point.grid}, elevation ${point.elevation} m.`);
+    }
+
+    function setPresetTarget(name) {
+      const point = findPresetPoint(name);
+      if (!point) return;
+
+      document.getElementById("missionTo").value = point.name;
+      document.getElementById("targetGrid").value = point.grid;
+      document.getElementById("targetAlt").value = point.elevation;
+
+      resetAdjustmentBaseline();
+      runCalc(false);
+
+      setPresetStatus(`Target set to ${point.name}: ${point.grid}, elevation ${point.elevation} m.`);
+    }
+
+    function getCurrentTablesForRangeCheck() {
+      const weaponType = getActiveWeaponType();
+      const munitionKey = getActiveMunitionKey();
+      return getTableCollection(weaponType, munitionKey);
+    }
+
+    function getSelectedRangeLimitInfo(rangeMeters) {
+      const weaponType = getActiveWeaponType();
+      const munitionKey = getActiveMunitionKey();
+      const tables = getCurrentTablesForRangeCheck();
+      const requestedTableKey = getActiveTableKey();
+
+      if (requestedTableKey === "auto") {
+        try {
+          const selectedKey = autoSelectTableKey(rangeMeters, tables);
+          return {
+            inRange: true,
+            label: getTableLabel(weaponType, munitionKey, selectedKey),
+          };
+        } catch {
+          return {
+            inRange: false,
+            label: "No valid charge/ring",
+          };
+        }
+      }
+
+      const table = tables[Number(requestedTableKey)];
+      if (!table || !table.length) {
+        return {
+          inRange: false,
+          label: "No table loaded",
+        };
+      }
+
+      const minRange = table[0][0];
+      const maxRange = table[table.length - 1][0];
+
+      return {
+        inRange: rangeMeters >= minRange && rangeMeters <= maxRange,
+        label: getTableLabel(weaponType, munitionKey, Number(requestedTableKey)),
+        minRange,
+        maxRange,
+      };
+    }
+
+    function renderPresetTargets() {
+      const list = document.getElementById("presetTargetList");
+      if (!list) return;
+
+      populateGunPresetDropdown();
+
+      const scale = Number(document.getElementById("gridScale")?.value || 10);
+      const filterMode = document.getElementById("targetFilterMode")?.value || "inRange";
+      const gunGridText = document.getElementById("gunGrid")?.value || "";
+      const currentGunName = document.getElementById("missionFrom")?.value || "";
+
+      let gunGrid;
+      try {
+        gunGrid = parseEightDigitGrid(gunGridText, scale);
+      } catch {
+        list.innerHTML = `<div class="empty-history">Enter a valid 8-digit gun grid or select a Gun / From preset.</div>`;
+        setPresetStatus("No valid gun grid set. Target preset filtering is waiting for the firing location.");
+        return;
+      }
+
+      const rows = [];
+
+      for (const point of PRESET_POINTS) {
+        if (point.name === currentGunName || point.grid === gunGridText.replace(/\D/g, "")) {
+          continue;
+        }
+
+        const targetGrid = parseEightDigitGrid(point.grid, scale);
+        const rangeMeters = calculateRangeMeters(gunGrid, targetGrid);
+        const rangeInfo = getSelectedRangeLimitInfo(rangeMeters);
+
+        if (filterMode === "inRange" && !rangeInfo.inRange) {
+          continue;
+        }
+
+        const rangeClass = rangeInfo.inRange ? "preset-in-range" : "preset-out-range";
+        const rangeText = rangeInfo.inRange ? "IN RANGE" : "OUT OF RANGE";
+
+        rows.push(`
+          <div class="preset-item">
+            <div>
+              <div class="preset-name">${escapeHtml(point.name)}</div>
+              <div class="preset-meta">
+                Grid ${escapeHtml(point.grid)} | Elevation ${escapeHtml(point.elevation)} m | Range ${fmt(rangeMeters, 1)} m<br>
+                <span class="${rangeClass}">${rangeText}</span> | ${escapeHtml(rangeInfo.label)}
+              </div>
+            </div>
+            <button class="small-btn" onclick="setPresetTarget('${escapeHtml(point.name)}')" ${rangeInfo.inRange ? "" : ""}>Set Target</button>
+          </div>
+        `);
+      }
+
+      if (!rows.length) {
+        list.innerHTML = `<div class="empty-history">No preset targets are in range for the current gun position and selected weapon/table. Try Auto mode or switch to Show all preset targets.</div>`;
+      } else {
+        list.innerHTML = rows.join("");
+      }
+
+      setPresetStatus(`${rows.length} preset target(s) displayed for the current firing location.`);
     }
 
     function loadExample() {
@@ -1993,19 +2355,41 @@
 
       const rows = history.map(entry => {
         const localTime = new Date(entry.timestamp).toLocaleString();
+        const gunName = entry.missionFrom || "Unknown Gun";
+        const targetName = entry.missionTo || "Unknown Target";
+        const tableName = entry.tableLabel || entry.selectedCharge;
+
         return `
           <tr>
-            <td>${escapeHtml(localTime)}</td>
-            <td><strong>${escapeHtml(entry.missionName)}</strong><br><span style="color: var(--muted);">From: ${escapeHtml(entry.missionFrom)} → To: ${escapeHtml(entry.missionTo)}</span></td>
-            <td>${escapeHtml(entry.gunGridRaw)}<br><span style="color: var(--muted);">${escapeHtml(entry.gunAltitudeMeters)} m</span></td>
-            <td>${escapeHtml(entry.targetGridRaw)}<br><span style="color: var(--muted);">${escapeHtml(entry.targetAltitudeMeters)} m</span></td>
-            <td>${fmt(entry.horizontalRangeMeters, 1)}</td>
-            <td>${fmt(entry.azimuthMils, 1)}</td>
-            <td>${escapeHtml(entry.tableLabel || entry.selectedCharge)}</td>
-            <td>${fmt(entry.baseElevationMils, 1)}</td>
-            <td>${fmt(entry.siteAngleMils, 1)}</td>
-            <td><strong>${fmt(entry.correctedElevationMils, 1)}</strong></td>
-            <td>${fmt(entry.timeOfFlightSeconds, 1)}</td>
+            <td>
+              <strong>${escapeHtml(entry.missionName)}</strong><br>
+              <span style="color: var(--muted);">${escapeHtml(localTime)}</span>
+            </td>
+            <td>
+              <div class="history-locations">
+                <div class="history-location-card">
+                  <div class="history-location-label">Gun / From</div>
+                  <div class="history-location-name">${escapeHtml(gunName)}</div>
+                  <div class="history-location-grid">${escapeHtml(entry.gunGridRaw)}</div>
+                  <div class="history-location-alt">Elevation ${escapeHtml(entry.gunAltitudeMeters)} m</div>
+                </div>
+                <div class="history-location-card">
+                  <div class="history-location-label">Target / To</div>
+                  <div class="history-location-name">${escapeHtml(targetName)}</div>
+                  <div class="history-location-grid">${escapeHtml(entry.targetGridRaw)}</div>
+                  <div class="history-location-alt">Elevation ${escapeHtml(entry.targetAltitudeMeters)} m</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="history-solution-stack">
+                <div class="history-solution-primary">AZ ${fmt(entry.azimuthMils, 1)} mil</div>
+                <div class="history-solution-primary">EL ${fmt(entry.correctedElevationMils, 1)} mil</div>
+                <div class="history-solution-secondary">${escapeHtml(tableName)}</div>
+                <div class="history-solution-muted">Range ${fmt(entry.horizontalRangeMeters, 1)} m | TOF ${fmt(entry.timeOfFlightSeconds, 1)} sec</div>
+                <div class="history-solution-muted">Site ${fmt(entry.siteAngleMils, 1)} mil | Base EL ${fmt(entry.baseElevationMils, 1)} mil</div>
+              </div>
+            </td>
             <td>
               <button class="small-btn" onclick="loadHistoryEntry('${entry.id}')">Load</button>
               <button class="small-btn danger-btn" onclick="deleteHistoryEntry('${entry.id}')">Delete</button>
@@ -2019,17 +2403,9 @@
           <table class="history-table">
             <thead>
               <tr>
-                <th>Time</th>
                 <th>Mission</th>
-                <th>Gun</th>
-                <th>Target</th>
-                <th>Range m</th>
-                <th>Az mil</th>
-                <th>Chg</th>
-                <th>Base elev</th>
-                <th>Site mil</th>
-                <th>Final elev</th>
-                <th>TOF</th>
+                <th>Gun and Target Locations</th>
+                <th>Fire Solution</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -2041,8 +2417,10 @@
 
     loadExample();
     updateWeaponUi(false);
+    populateGunPresetDropdown();
     updateManualTrimStatus();
     renderHistory();
+    renderPresetTargets();
     showStartupPromptIfNeeded();
   </script>
 </body>
